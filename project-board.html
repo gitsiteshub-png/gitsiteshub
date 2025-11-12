@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Tableau</title>
+	<link rel="stylesheet" href="styles.css" />
+	<style>
+		.container{max-width:1100px;margin:24px auto}
+		.header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+		.header .right{display:flex;gap:8px;align-items:center}
+		.board-hero{
+			margin-top:16px;border-radius:12px;padding:24px;background:var(--surface);
+			min-height:220px;position:relative;overflow:hidden;
+		}
+		.board-hero .bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0.12}
+		.board-hero .content{position:relative;z-index:2}
+		.meta{color:var(--muted);margin-top:8px}
+	</style>
+</head>
+<body>
+	<main class="container">
+		<header class="header">
+			<div>
+				<a href="projects.html" class="small-btn">← Tableaux</a>
+				<span id="board-breadcrumb" style="margin-left:12px;color:var(--muted)"></span>
+			</div>
+			<div class="right">
+				<button id="btn-edit-board" class="icon-btn">✎</button>
+				<button id="btn-toggle-complete" class="icon-btn">✔</button>
+			</div>
+		</header>
+
+		<section class="board-hero" id="board-hero">
+			<div class="bg" id="board-bg"></div>
+			<div class="content">
+				<!-- renamed to avoid ID collision with modal input -->
+				<h1 id="board-title-display" style="margin:0"></h1>
+				<div class="meta">
+					Créé le <span id="board-created"></span>
+					<span id="board-completed" style="margin-left:12px"></span>
+				</div>
+			</div>
+		</section>
+
+		<section id="board-body" style="margin-top:18px">
+			<!-- Category area -->
+			<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+				<h3 style="margin:0">Catégories</h3>
+				<button id="btn-add-category-board" class="icon-btn">+ Catégorie</button>
+			</div>
+
+			<div id="board-categories" class="board-categories">
+				<!-- categories rendered here by projects.js -->
+			</div>
+		</section>
+	</main>
+
+	<!-- Add modal here so editing works from the board page too -->
+	<div id="modal-board" class="modal hidden">
+		<form id="form-board" class="modal-sheet" style="max-width:600px">
+			<h3 id="board-modal-title">Nouveau tableau</h3>
+			<input type="hidden" id="board-id" />
+			<div class="form-row">
+				<!-- input must keep id "board-title" to match projects.js modal handlers -->
+				<input id="board-title" placeholder="Titre du tableau" required />
+			</div>
+			<div class="form-row">
+				<input id="board-bg" placeholder="URL du fond (optionnel)" />
+			</div>
+			<div class="form-row">
+				<label style="color:var(--muted);display:flex;align-items:center;gap:8px">
+					<input type="checkbox" id="board-completed"> Marquer comme complété
+				</label>
+			</div>
+			<div class="modal-actions">
+				<button type="button" id="board-cancel">Annuler</button>
+				<button type="button" id="board-delete" style="display:none;background:var(--danger);color:#fff;border-radius:8px;padding:8px">Supprimer</button>
+				<button type="submit" id="board-save">Enregistrer</button>
+			</div>
+		</form>
+	</div>
+
+	<!-- Category modal (board) -->
+	<div id="modal-category-board" class="modal hidden">
+		<form id="form-category-board" class="modal-sheet" style="max-width:520px">
+			<h3 id="category-modal-title-board">Nouvelle catégorie</h3>
+			<input type="hidden" id="category-id-board" />
+			<input id="category-title-board" placeholder="Titre de la catégorie" required />
+			<div class="modal-actions">
+				<button type="button" id="category-cancel-board">Annuler</button>
+				<button type="button" id="category-delete-board" style="display:none;background:var(--danger);color:#fff;border-radius:8px;padding:8px">Supprimer</button>
+				<button type="submit" id="category-save-board">Enregistrer</button>
+			</div>
+		</form>
+	</div>
+
+	<!-- Task modal (board) -->
+	<div id="modal-task-board" class="modal hidden">
+		<form id="form-task-board" class="modal-sheet" style="max-width:520px">
+			<h3 id="task-modal-title-board">Nouvelle tâche</h3>
+			<input type="hidden" id="task-id-board" />
+			<input type="hidden" id="task-category-id-board" />
+			<input id="task-title-board" placeholder="Titre de la tâche" required />
+			<textarea id="task-desc-board" placeholder="Description (Markdown)"></textarea>
+			<div class="modal-actions">
+				<button type="button" id="task-cancel-board">Annuler</button>
+				<button type="button" id="task-delete-board" style="display:none;background:var(--danger);color:#fff;border-radius:8px;padding:8px">Supprimer</button>
+				<button type="submit" id="task-save-board">Enregistrer</button>
+			</div>
+		</form>
+	</div>
+
+	<!-- Task details modal (lecture seule) -->
+	<div id="modal-task-details-board" class="modal hidden">
+		<div class="modal-sheet" style="max-width:520px">
+			<h3 style="margin-bottom:8px">Détails de la tâche</h3>
+			<div style="margin-bottom:10px">
+				<strong id="task-details-title-board"></strong>
+			</div>
+			<div style="margin-bottom:10px">
+				<div id="task-details-desc-board" style="color:#dbefff"></div>
+			</div>
+			<div style="margin-bottom:10px;font-size:0.95rem;color:var(--muted)">
+				Créée le <span id="task-details-created-board"></span>
+				<span id="task-details-completed-board" style="margin-left:12px"></span>
+			</div>
+			<div style="margin-bottom:10px;font-size:0.95rem;color:var(--muted)">
+				Statut : <span id="task-details-status-board"></span>
+			</div>
+			<div class="modal-actions">
+				<button type="button" id="task-details-edit-board">Modifier</button>
+				<button type="button" id="task-details-del-board" style="background:var(--danger);color:#fff;border-radius:8px;padding:8px">Supprimer</button>
+				<button type="button" onclick="hideTaskDetailsModal()">Fermer</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="projects.js" type="module"></script>
+</body>
+</html>
